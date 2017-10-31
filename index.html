@@ -100,6 +100,62 @@ function isect(Ax1, Ay1, Ax2, Ay2, Bx1, By1, Bx2, By2)
     return [ix, iy];
 }
 
+
+var Mesh = function(color)
+{
+    this.points = [];
+    this.meshes = [];
+    this.x = 0;
+    this.y = 0;
+    this.theta = 0;
+    this.solid = true;
+    this.color = color;
+    
+    this.translate = function(x, y)
+    {
+        this.x += x;
+        this.y += y;
+    }
+    
+    this.rotate = function(theta)
+    {
+        this.theta += theta;
+    }
+    
+    this.colliding = function(mesh)
+    {
+        // TODO
+    }
+    
+    this.render = function(canvas)
+    {
+        var ctx = canvas.getContext("2d");
+        
+        if (this.points.length > 0)
+        {
+            ctx.beginPath();
+            ctx.strokeStyle = this.color;
+            ctx.moveTo(this.points[0][0], this.points[0][1]);
+            
+            for (var i = 1; i < this.points.length; i++)
+            {
+                ctx.lineTo(this.points[i][0], this.points[i][1]);
+            }
+            
+            ctx.stroke();
+        }
+        
+        for (var i in this.meshes)
+        {
+            this.meshes[i].rotate(this.theta);
+            this.meshes[i].translate(this.x, this.y);
+            this.meshes[i].render(canvas);
+            this.meshes[i].translate(-this.x, -this.y);
+            this.meshes[i].rotate(-this.theta);
+        }
+    }
+}
+
 /** Drawable and interactive objects **/
 var Line = function(x1, y1, x2, y2, col)
 {
@@ -158,7 +214,7 @@ var Line = function(x1, y1, x2, y2, col)
     }
 }
 
-var Beam = function(x, y, a, len)
+var Ray = function(x, y, a, len)
 {
     this.x = x;
     this.y = y;
@@ -413,10 +469,10 @@ var Scene = function()
 /** Models **/
 var Car = function(x, y, a, col)
 {
-    this.sens_fl = new Beam(10, -20, -Math.PI*3/4, 150);
-    this.sens_fr = new Beam(-10, -20, -Math.PI/4, 150);
-    this.sens_sl = new Beam(-10, -5, -Math.PI, 150);
-    this.sens_sr = new Beam(10, -5, 0, 150);
+    this.sens_fl = new Ray(10, -20, -Math.PI*3/4, 150);
+    this.sens_fr = new Ray(-10, -20, -Math.PI/4, 150);
+    this.sens_sl = new Ray(-10, -5, -Math.PI, 150);
+    this.sens_sr = new Ray(10, -5, 0, 150);
     this.anchor = new Anchor(x, y, a);
     this.anchor.add(this.sens_fl);
     this.anchor.add(this.sens_fr);
