@@ -100,58 +100,154 @@ function isect(Ax1, Ay1, Ax2, Ay2, Bx1, By1, Bx2, By2)
     return [ix, iy];
 }
 
-
+/* Geometrics */
 var Mesh = function(color)
 {
     this.points = [];
-    this.meshes = [];
     this.x = 0;
     this.y = 0;
     this.theta = 0;
     this.solid = true;
-    this.color = color;
-    
+    this.color = (color != undefined) ? color : "#eee";
+
     this.translate = function(x, y)
     {
         this.x += x;
         this.y += y;
+        
+        for (var i in this.points)
+        {
+            this.points[i][0] += x;
+            this.points[i][1] += y;
+        }
     }
-    
+
     this.rotate = function(theta)
     {
         this.theta += theta;
+        
+        for (var i in this.points)
+        {
+            var tmp = rot(this.points[i][0], this.points[i][1], theta);
+            this.points[i] = tmp;
+        }
     }
-    
+
+    this.add_point = function(point)
+    {
+        var tmp = rot(point[0], point[1], this.theta);
+        tmp[0] += this.x;
+        tmp[1] += this.y;
+        this.points.push(tmp);
+    }
+
     this.colliding = function(mesh)
     {
-        // TODO
+        var isp = [];
+
+        for (var i = 1; i < this.points.length; i++)
+        {
+            var p1 = this.points[i];
+            for (var j = 1; j < mesh.points.length; j++)
+            {
+                var p2 = mesh.points[j];
+                p = isect(p1[i-1][0], p1[i-1][1], p1[i][0], p1[i][1],
+                          p2[i-1][0], p2[i-1][1], p2[i][0], p2[i][1]);
+                if (p != undefined)
+                {
+                    isp.push(p);
+                }
+            }
+        }
+
+        return (isp.length == 0) ? undefined : isp;
     }
-    
+
     this.render = function(canvas)
     {
         var ctx = canvas.getContext("2d");
-        
+
         if (this.points.length > 0)
         {
             ctx.beginPath();
             ctx.strokeStyle = this.color;
             ctx.moveTo(this.points[0][0], this.points[0][1]);
-            
+
             for (var i = 1; i < this.points.length; i++)
             {
                 ctx.lineTo(this.points[i][0], this.points[i][1]);
             }
-            
+
             ctx.stroke();
         }
+
+        for (var i in this.meshes)
+        {
+            this.meshes[i].render(canvas);
+        }
+    }
+}
+
+var Group = function()
+{
+    this.meshes = [];
+    this.x = 0;
+    this.y = 0;
+    this.theta = 0;
+
+    this.translate = function(x, y)
+    {
+        this.x += x;
+        this.y += y;
+
+        for (var i in this.meshes)
+        {
+            this.meshes[i].translate(x, y);
+        }
+    }
+
+    this.rotate = function(theta)
+    {
+        this.theta += theta;
         
         for (var i in this.meshes)
         {
-            this.meshes[i].rotate(this.theta);
-            this.meshes[i].translate(this.x, this.y);
+            this.meshes[i].rotate(theta);
+        }
+    }
+
+    this.add_mesh = function(mesh)
+    {
+        mesh.rotate(this.theta);
+        mesh.translate(this.x, this.y);
+        this.meshes.push(mesh);
+    }
+
+    this.colliding = function(group)
+    {
+        var isp = [];
+
+        for (var i in this.meshes)
+        {
+            for (var j in group.meshes)
+            {
+                var ps = this.meshes[i].colliding(group.meshes[j]);
+
+                if (ps != undefined)
+                {
+                    isp = isp.concat(ps);
+                }
+            }
+        }
+
+        return (isp.length == 0) ? undefined : isp;
+    }
+
+    this.render = function(canvas)
+    {   
+        for (var i in this.meshes)
+        {
             this.meshes[i].render(canvas);
-            this.meshes[i].translate(-this.x, -this.y);
-            this.meshes[i].rotate(-this.theta);
         }
     }
 }
