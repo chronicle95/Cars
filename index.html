@@ -1,0 +1,589 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Car Model</title>
+        <meta charset="utf-8"/>
+<style>
+canvas {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+</style>
+    </head>
+    <body>
+        <canvas width="600" height="600"></canvas>
+        <script>
+/* Rotations */
+function rot(x, y, t)
+{
+    var tt = Math.atan(y/x);
+    var tl = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+    if (x < 0) tt += Math.PI;
+    return [Math.cos(tt + t) * tl, Math.sin(tt + t) * tl];
+}
+
+/* Intersections */
+function isect(Ax1, Ay1, Ax2, Ay2, Bx1, By1, Bx2, By2)
+{
+    var ix, iy;
+
+    /* Both lines are verticals, not intersecting */
+    if ((Ax1 == Ax2) && (Bx1 == Bx2))
+    {
+        return undefined;
+    }
+
+    /* First line is vertical */
+    if (Ax1 == Ax2)
+    {
+        var k2 = (By2 - By1) / (Bx2 - Bx1);
+        var b2 = By1 - (k2 * Bx1);
+        ix = Ax1;
+        iy = k2*ix + b2;
+    }
+    /* Second line is vertical */
+    else if (Bx1 == Bx2)
+    {
+        var k1 = (Ay2 - Ay1) / (Ax2 - Ax1);
+        var b1 = Ay1 - (k1 * Ax1);
+        ix = Bx1;
+        iy = k1*ix + b1;
+    }
+    else
+    {
+        /* Calculate line coefficients */
+        var k1 = (Ay2 - Ay1) / (Ax2 - Ax1);
+        var k2 = (By2 - By1) / (Bx2 - Bx1);
+
+        /* If lines are parallel, they do not intersect */
+        if (k1 == k2) return undefined;
+
+        /* Calculate shifts */
+        var b1 = Ay1 - (k1 * Ax1);
+        var b2 = By1 - (k2 * Bx1);
+
+        /*  Find the intersection point
+            y = K1x + B1
+            y = K2x + B2
+            -->
+            x = (y - B2) / K2
+            y = (K2B1 - K1B2) / (K2 - K1)
+            -->
+            x = (y - B1) / K1
+            y = (K1B2 - K2B1) / (K1 - K2)
+        */
+        if (k2 == 0)
+        {
+            iy = (k1*b2 - k2*b1) / (k1 - k2);
+            ix = (iy - b1) / k1;
+        }
+        else
+        {
+            iy = (k2*b1 - k1*b2) / (k2 - k1);
+            ix = (iy - b2) / k2;
+        }
+        
+    }
+
+    /* Check if point lies in the short ranges */
+    if ((ix > Math.max(Ax1, Ax2)) || (ix < Math.min(Ax1, Ax2))
+        || (iy > Math.max(Ay1, Ay2)) || (iy < Math.min(Ay1, Ay2))
+        || (ix > Math.max(Bx1, Bx2)) || (ix < Math.min(Bx1, Bx2))
+        || (iy > Math.max(By1, By2)) || (iy < Math.min(By1, By2)))
+    {
+        return undefined;
+    }
+
+    return [ix, iy];
+}
+
+/** Drawable and interactive objects **/
+var Line = function(x1, y1, x2, y2, col)
+{
+    this.x1 = x1;
+    this.y1 = y1;
+    this.x2 = x2;
+    this.y2 = y2;
+    this.col = col;
+    this.container = false;
+    this.solid = true;
+    this.scene = null;
+
+    this.translate = function(x, y)
+    {
+        this.x1 += x;
+        this.x2 += x;
+        this.y1 += y;
+        this.y2 += y;
+    }
+    
+    this.clone = function()
+    {
+        var temp = new Line(this.x1, this.y1,
+                            this.x2, this.y2, this.col);
+        temp.set_scene(this.scene);
+        return temp;
+    }
+
+    this.rotate = function(t)
+    {
+        var temp1 = rot(this.x1, this.y1, t);
+        var temp2 = rot(this.x2, this.y2, t);
+        this.x1 = temp1[0];
+        this.x2 = temp2[0];
+        this.y1 = temp1[1];
+        this.y2 = temp2[1]; 
+    }
+    
+    this.is_solid = function()
+    {
+        return this.solid;
+    }
+    
+    this.set_scene = function(scene)
+    {
+        this.scene = scene;
+    }
+
+    this.render = function(canv, ctx)
+    {
+        ctx.strokeStyle = (this.col == undefined) ? "#eee" : this.col;
+        ctx.beginPath();
+        ctx.moveTo(this.x1, this.y1);
+        ctx.lineTo(this.x2, this.y2);
+        ctx.stroke();
+    }
+}
+
+var Beam = function(x, y, a, len)
+{
+    this.x = x;
+    this.y = y;
+    this.a = a;
+    this.l = len;
+    this.container = false;
+    this.solid = false;
+    this.scene = null;
+    this.distance = undefined;
+
+    this.is_solid = function()
+    {
+        return this.solid;
+    }
+
+    this.translate = function(x, y)
+    {
+        this.x += x;
+        this.y += y;
+    }
+
+    this.rotate = function(t)
+    {
+        var temp = rot(this.x, this.y, t);
+        this.x = temp[0];
+        this.y = temp[1];
+        this.a += t;
+    }
+    
+    this.set_scene = function(scene)
+    {
+        this.scene = scene;
+    }
+    
+    this.nearest_encounter = function()
+    {
+        var nx = this.x + (this.l * Math.cos(this.a));
+        var ny = this.y + (this.l * Math.sin(this.a));
+        var nl = null;
+        var np = null;
+
+        /* Find nearest intersection */
+        for (var i in this.scene.elements)
+        {
+            var elem = this.scene.elements[i];
+            if (!elem.solid)
+            {
+                continue;
+            }
+
+            var p = isect(elem.x1, elem.y1, elem.x2, elem.y2,
+                          this.x, this.y, nx, ny);
+            if (p == undefined)
+            {
+                continue;
+            }
+
+            if (nl == null)
+            {
+                var temp = Math.sqrt(Math.pow(p[0]-this.x, 2)
+                                + Math.pow(p[1]-this.y, 2));
+                if (temp < this.l)
+                {
+                    nl = temp;
+                    np = p;
+                }
+            }
+            else
+            {
+                var temp = Math.sqrt(Math.pow(p[0]-this.x, 2)
+                                    + Math.pow(p[1]-this.y, 2));
+                if (temp < nl)
+                {
+                    nl = temp;
+                    np = p;
+                }
+            }
+        }
+
+        if (np != null)
+        {
+            nx = np[0];
+            ny = np[1];
+        }
+
+        return [nx, ny];
+    }
+
+    this.get_distance = function()
+    {
+        return this.distance;
+    }
+
+    this.render = function(canv, ctx)
+    {
+        var p = this.nearest_encounter();
+        this.distance = Math.floor(Math.sqrt(Math.pow(p[0]-this.x, 2)
+                        + Math.pow(p[1]-this.y, 2)));
+        ctx.fillStyle = "#833";
+        ctx.fillRect(this.x - 2, this.y - 2, 4, 4);
+        ctx.strokeStyle = "#833";
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(p[0], p[1]);
+        ctx.stroke();
+        ctx.font = "10px arial";
+        ctx.fillText(this.distance,
+                        (p[0]-this.x)/2+this.x,
+                        (p[1]-this.y)/2+this.y);
+    }
+}
+
+/** Drawable object containers **/
+var Anchor = function(x, y, a)
+{
+    this.x = x;
+    this.y = y;
+    this.a = a;
+    this.container = true;
+    this.solid = false;
+    this.scene = null;
+
+    this.elements = [];
+
+    this.add = function(element)
+    {
+        element.set_scene(this.scene);
+        this.elements.push(element);
+    }
+
+    this.is_solid = function()
+    {
+        return this.solid;
+    }
+
+    this.set_scene = function(scene)
+    {
+        this.scene = scene;
+        for (var i in this.elements)
+        {
+            this.elements[i].set_scene(scene);
+        }
+    }
+    
+    /* checks whether anchor SOLIDS are colliding with any
+       SOLID instances in the scene */
+    this.is_colliding = function()
+    {
+        for (var i in this.elements)
+        {
+            var elem = this.elements[i];
+            if (!elem.solid)
+            {
+                continue;
+            }
+
+            /* Prepare the object */
+            elem = elem.clone();
+            elem.rotate(this.a);
+            elem.translate(this.x, this.y);
+
+            for (var j in this.scene.elements)
+            {
+                var s_elem = this.scene.elements[j];
+                if (!s_elem.solid)
+                {
+                    continue;
+                }
+
+                var p = isect(elem.x1, elem.y1, elem.x2, elem.y2,
+                       s_elem.x1, s_elem.y1, s_elem.x2, s_elem.y2);
+                if (p != undefined)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /* translates the object in its rotational
+       coordinates + collision detection */
+    this.cmove = function(x, y)
+    {
+        var temp = rot(x, y, this.a);
+	    this.x += temp[0];
+	    this.y += temp[1];
+	    if (this.is_colliding())
+	    {
+	        this.x -= temp[0];
+	        this.y -= temp[1];
+	    }
+    }
+
+    this.translate = function(x, y)
+    {
+        this.x += x;
+        this.y += y;
+    }
+
+    this.rotate = function(t)
+    {
+        this.a += t;
+    }
+    
+    this.crotate = function(t)
+    {
+        this.a += t;
+        if (this.is_colliding())
+        {
+            this.a -= t;
+        }
+    }
+
+    this.render = function(canv, ctx)
+    {
+        ctx.fillStyle = "#0f0";
+        ctx.fillRect(this.x-2, this.y-2, 3, 3); 
+        for (var i in this.elements)
+        {
+            var obj = this.elements[i];
+            obj.rotate(this.a);
+            obj.translate(this.x, this.y);
+            obj.render(canv, ctx);
+            obj.translate(-this.x, -this.y);
+            obj.rotate(-this.a);
+        }
+    }
+}
+
+var Scene = function()
+{
+    this.elements = [];
+
+    this.add = function(element)
+    {
+        element.set_scene(this);
+        this.elements.push(element);
+    }
+
+    this.render = function(canv, ctx)
+    {
+        cx.fillStyle = "#333";
+        cx.fillRect(0, 0, cv.width, cv.height);
+        for (var i in this.elements)
+        {
+            this.elements[i].render(canv, ctx);
+        }
+    }
+}
+
+/** Models **/
+var Car = function(x, y, a, col)
+{
+    this.sens_fl = new Beam(10, -20, -Math.PI*3/4, 150);
+    this.sens_fr = new Beam(-10, -20, -Math.PI/4, 150);
+    this.sens_sl = new Beam(-10, -5, -Math.PI, 150);
+    this.sens_sr = new Beam(10, -5, 0, 150);
+    this.anchor = new Anchor(x, y, a);
+    this.anchor.add(this.sens_fl);
+    this.anchor.add(this.sens_fr);
+    this.anchor.add(this.sens_sl);
+    this.anchor.add(this.sens_sr);
+    this.anchor.add(new Line(-10, -20, 10, -20, col));
+    this.anchor.add(new Line(10, -20, 10, 20, col));
+    this.anchor.add(new Line(10, 20, -10, 20, col));
+    this.anchor.add(new Line(-10, 20, -10, -20, col));
+    
+    this.speed = 0;
+    
+    this.move = function()
+    {
+        if (this.speed != 0) this.anchor.cmove(0, this.speed);
+    }
+
+    this.get_anchor = function()
+    {
+        return this.anchor;
+    }
+    
+    this.go_forward = function()
+    {
+        if (this.speed <= 0)
+        {
+            this.speed = -2;
+        }
+        else
+        {
+            this.speed = 0;
+        }
+    }
+    
+    this.go_backward = function()
+    {
+        if (this.speed >= 0)
+        {
+            this.speed = 2;
+        }
+        else
+        {
+            this.speed = 0;
+        }
+    }
+    
+    this.turn_left = function()
+    {
+        this.anchor.crotate(-Math.PI/90);
+    }
+    
+    this.turn_right = function()
+    {
+        this.anchor.crotate(Math.PI/90);
+    }
+    
+    this.update = function()
+    {
+        var dist_fl = this.sens_fl.get_distance();
+        var dist_fr = this.sens_fr.get_distance();
+        var dist_sl = this.sens_sl.get_distance();
+        var dist_sr = this.sens_sr.get_distance();
+
+        if ((dist_fl < 40) && (dist_fr < 40))
+        {
+            this.go_backward();
+            this.go_backward();
+            if (dist_sl > dist_sr)
+            {
+                this.turn_left();
+            }
+            else
+            {
+                this.turn_right();
+            }
+        }
+        else
+        {
+            this.go_forward();
+            this.go_forward();
+            if (dist_fl > dist_fr)
+            {
+                this.turn_left();
+            }
+            else
+            {
+                this.turn_right();
+            }
+        }
+    }
+}
+
+var cv = document.getElementsByTagName("canvas")[0];
+var cx = cv.getContext("2d");
+
+var player1 = new Car(450, 240, Math.PI/20, "#3ff");
+var player2 = new Car(490, 240, Math.PI/20, "#f3f");
+var player3 = new Car(440, 300, Math.PI/17, "#ff3");
+var player4 = new Car(480, 300, Math.PI/19, "#33f");
+var player5 = new Car(430, 360, Math.PI/20, "#f33");
+var player6 = new Car(470, 360, Math.PI/18, "#aaa");
+
+var scene = new Scene();
+scene.add(new Line(90, 100, 550, 90));
+scene.add(new Line(550, 90, 500, 480));
+scene.add(new Line(500, 480, 100, 440));
+scene.add(new Line(100, 440, 90, 100));
+scene.add(new Line(190, 200, 430, 200));
+scene.add(new Line(430, 200, 400, 380));
+scene.add(new Line(400, 380, 200, 370));
+scene.add(new Line(190, 200, 200, 370));
+scene.add(player1.get_anchor());
+scene.add(player2.get_anchor());
+scene.add(player3.get_anchor());
+scene.add(player4.get_anchor());
+scene.add(player5.get_anchor());
+scene.add(player6.get_anchor());
+
+var manual = true;
+window.onkeypress = function(e)
+{
+    switch (e.which)
+    {
+        case 119: //up (W)
+        case 87:
+            player1.go_forward();
+            break;
+        case 97:  //left (A)
+        case 65:
+            player1.turn_left();
+            break;
+        case 100: //right (D)
+        case 68:
+            player1.turn_right();
+            break;
+        case 115: //down (S)
+        case 83:
+            player1.go_backward();
+            break;
+        case 32:
+            manual = false;
+            window.setInterval(function() {
+                player1.update();
+                player2.update();
+                player3.update();
+                player4.update();
+                player5.update();
+                player6.update();
+            }, 40);
+            break;
+    }
+}
+
+/* Render loop */
+window.setInterval(function() {
+    player1.move();
+    player2.move();
+    player3.move();
+    player4.move();
+    player5.move();
+    player6.move();
+    scene.render(cv, cx);
+
+    cx.fillStyle = "#fff";
+    cx.font = "32px verdana";
+    cx.fillText(manual?"Manual":"Automatic", 10, 50);
+}, 20);
+        </script>
+    </body>
+</html>
