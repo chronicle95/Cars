@@ -358,6 +358,7 @@ var Car = function(x, y, theta, col)
     this.sens_sl = new Ray(-10, -5, -Math.PI, 150);
     this.sens_sr = new Ray(10, -5, 0, 150);
     this.mesh = new Mesh(col);
+    this.group = new Group();
 
     this.sens_fl.rotate(this.theta);
     this.sens_fl.translate(this.x, this.y);
@@ -372,18 +373,28 @@ var Car = function(x, y, theta, col)
     this.mesh.add_point([10, 20]);
     this.mesh.add_point([-10, 20]);
     this.mesh.add_point([-10, -20]);
-    this.mesh.rotate(this.theta);
-    this.mesh.translate(this.x, this.y);
+    this.group.add_mesh(this.mesh);
+    this.group.rotate(this.theta);
+    this.group.translate(this.x, this.y);
 
-    this.move = function()
+    this.move = function(group)
     {
         if (this.speed == 0) return;
         var p = rot(0, this.speed, this.theta);
-        this.mesh.translate(p[0], p[1]);
+        this.group.translate(p[0], p[1]);
         this.sens_fl.translate(p[0], p[1]);
         this.sens_fr.translate(p[0], p[1]);
         this.sens_sl.translate(p[0], p[1]);
         this.sens_sr.translate(p[0], p[1]);
+        if (this.group.colliding(group))
+        {
+            this.group.translate(-p[0], -p[1]);
+            this.sens_fl.translate(-p[0], -p[1]);
+            this.sens_fr.translate(-p[0], -p[1]);
+            this.sens_sl.translate(-p[0], -p[1]);
+            this.sens_sr.translate(-p[0], -p[1]);
+            return;
+        }
         this.x += p[0];
         this.y += p[1];
     }
@@ -414,19 +425,19 @@ var Car = function(x, y, theta, col)
     
     this.rotate = function(theta)
     {
-        this.mesh.translate(-this.x, -this.y);
+        this.group.translate(-this.x, -this.y);
         this.sens_fl.translate(-this.x, -this.y);
         this.sens_fr.translate(-this.x, -this.y);
         this.sens_sl.translate(-this.x, -this.y);
         this.sens_sr.translate(-this.x, -this.y);
 
-        this.mesh.rotate(theta);
+        this.group.rotate(theta);
         this.sens_fl.rotate(theta);
         this.sens_fr.rotate(theta);
         this.sens_sl.rotate(theta);
         this.sens_sr.rotate(theta);
 
-        this.mesh.translate(this.x, this.y);
+        this.group.translate(this.x, this.y);
         this.sens_fl.translate(this.x, this.y);
         this.sens_fr.translate(this.x, this.y);
         this.sens_sl.translate(this.x, this.y);
@@ -451,7 +462,7 @@ var Car = function(x, y, theta, col)
         this.sens_fr.render(canvas, group);
         this.sens_sl.render(canvas, group);
         this.sens_sr.render(canvas, group);
-        this.mesh.render(canvas);
+        this.group.render(canvas);
     }
 
     this.update = function(group)
@@ -555,12 +566,12 @@ window.onkeypress = function(e)
 
 /* Render loop */
 window.setInterval(function() {
-    player1.move();
-    player2.move();
-    player3.move();
-    player4.move();
-    player5.move();
-    player6.move();
+    player1.move(scene);
+    player2.move(scene);
+    player3.move(scene);
+    player4.move(scene);
+    player5.move(scene);
+    player6.move(scene);
 
     cx.fillStyle = "#444";
     cx.fillRect(0, 0, cv.width, cv.height);
