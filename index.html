@@ -152,12 +152,14 @@ var Mesh = function(color)
 
         for (var i = 1; i < this.points.length; i++)
         {
-            var p1 = this.points[i];
+            var p11 = this.points[i-1];
+            var p12 = this.points[i];
             for (var j = 1; j < mesh.points.length; j++)
             {
-                var p2 = mesh.points[j];
-                p = isect(p1[i-1][0], p1[i-1][1], p1[i][0], p1[i][1],
-                          p2[i-1][0], p2[i-1][1], p2[i][0], p2[i][1]);
+                var p21 = mesh.points[j-1];
+                var p22 = mesh.points[j];
+                p = isect(p11[0], p11[1], p12[0], p12[1],
+                          p21[0], p21[1], p22[0], p22[1]);
                 if (p != undefined)
                 {
                     isp.push(p);
@@ -286,8 +288,13 @@ var Ray = function(x, y, theta, len)
         var gtmp = new Group();
         tmp.add_point([this.x, this.y]);
         tmp.add_point([nx, ny]);
-        gtmp.add_mesh(gtmp);
+        gtmp.add_mesh(tmp);
         var isp = gtmp.colliding(group);
+
+        if (isp == undefined)
+        {
+            return [nx, ny];
+        }
 
         for (var i in isp)
         {
@@ -425,12 +432,12 @@ var Car = function(x, y, theta, col)
         this.mesh.render(canvas);
     }
 
-    this.update = function()
+    this.update = function(group)
     {
-        var dist_fl = this.sens_fl.get_distance();
-        var dist_fr = this.sens_fr.get_distance();
-        var dist_sl = this.sens_sl.get_distance();
-        var dist_sr = this.sens_sr.get_distance();
+        var dist_fl = this.sens_fl.get_distance(group);
+        var dist_fr = this.sens_fr.get_distance(group);
+        var dist_sl = this.sens_sl.get_distance(group);
+        var dist_sr = this.sens_sr.get_distance(group);
 
         if ((dist_fl < 40) && (dist_fr < 40))
         {
