@@ -114,7 +114,7 @@ var Mesh = function(color)
     {
         this.x += x;
         this.y += y;
-        
+
         for (var i in this.points)
         {
             this.points[i][0] += x;
@@ -125,7 +125,7 @@ var Mesh = function(color)
     this.rotate = function(theta)
     {
         this.theta += theta;
-        
+
         for (var i in this.points)
         {
             var tmp = rot(this.points[i][0], this.points[i][1], theta);
@@ -144,6 +144,11 @@ var Mesh = function(color)
     this.colliding = function(mesh)
     {
         var isp = [];
+
+        if ((!this.solid) || (!mesh.solid))
+        {
+            return undefined;
+        }
 
         for (var i = 1; i < this.points.length; i++)
         {
@@ -563,24 +568,28 @@ var Scene = function()
 }
 
 /** Models **/
-var Car = function(x, y, a, col)
+var Car = function(x, y, theta, col)
 {
+    this.x = x;
+    this.y = y;
+    this.theta = theta;
+
     this.sens_fl = new Ray(10, -20, -Math.PI*3/4, 150);
     this.sens_fr = new Ray(-10, -20, -Math.PI/4, 150);
     this.sens_sl = new Ray(-10, -5, -Math.PI, 150);
     this.sens_sr = new Ray(10, -5, 0, 150);
-    this.anchor = new Anchor(x, y, a);
-    this.anchor.add(this.sens_fl);
-    this.anchor.add(this.sens_fr);
-    this.anchor.add(this.sens_sl);
-    this.anchor.add(this.sens_sr);
-    this.anchor.add(new Line(-10, -20, 10, -20, col));
-    this.anchor.add(new Line(10, -20, 10, 20, col));
-    this.anchor.add(new Line(10, 20, -10, 20, col));
-    this.anchor.add(new Line(-10, 20, -10, -20, col));
-    
+
+    this.mesh = new Mesh(col);
+    this.mesh.add_point([-10, -20]);
+    this.mesh.add_point([10, -20]);
+    this.mesh.add_point([10, 20]);
+    this.mesh.add_point([-10, 20]);
+    this.mesh.add_point([-10, -20]);
+    this.mesh.rotate(this.theta);
+    this.mesh.translate(this.x, this.y);
+
     this.speed = 0;
-    
+
     this.move = function()
     {
         if (this.speed != 0) this.anchor.cmove(0, this.speed);
@@ -590,7 +599,7 @@ var Car = function(x, y, a, col)
     {
         return this.anchor;
     }
-    
+
     this.go_forward = function()
     {
         if (this.speed <= 0)
@@ -602,7 +611,7 @@ var Car = function(x, y, a, col)
             this.speed = 0;
         }
     }
-    
+
     this.go_backward = function()
     {
         if (this.speed >= 0)
@@ -614,17 +623,17 @@ var Car = function(x, y, a, col)
             this.speed = 0;
         }
     }
-    
+
     this.turn_left = function()
     {
         this.anchor.crotate(-Math.PI/90);
     }
-    
+
     this.turn_right = function()
     {
         this.anchor.crotate(Math.PI/90);
     }
-    
+
     this.update = function()
     {
         var dist_fl = this.sens_fl.get_distance();
@@ -671,21 +680,29 @@ var player4 = new Car(480, 300, Math.PI/19, "#33f");
 var player5 = new Car(430, 360, Math.PI/20, "#f33");
 var player6 = new Car(470, 360, Math.PI/18, "#aaa");
 
-var scene = new Scene();
-scene.add(new Line(90, 100, 550, 90));
-scene.add(new Line(550, 90, 500, 480));
-scene.add(new Line(500, 480, 100, 440));
-scene.add(new Line(100, 440, 90, 100));
-scene.add(new Line(190, 200, 430, 200));
-scene.add(new Line(430, 200, 400, 380));
-scene.add(new Line(400, 380, 200, 370));
-scene.add(new Line(190, 200, 200, 370));
-scene.add(player1.get_anchor());
-scene.add(player2.get_anchor());
-scene.add(player3.get_anchor());
-scene.add(player4.get_anchor());
-scene.add(player5.get_anchor());
-scene.add(player6.get_anchor());
+var track1 = new Mesh("#fff");
+track1.add_point([90, 100]);
+track1.add_point([550, 90]);
+track1.add_point([500, 480]);
+track1.add_point([100, 440]);
+track1.add_point([90, 100]);
+
+var track2 = new Mesh("#fff");
+track1.add_point([190, 200]);
+track1.add_point([430, 200]);
+track1.add_point([400, 380]);
+track1.add_point([200, 370]);
+track1.add_point([190, 200]);
+
+var scene = new Group();
+scene.add_mesh(track1);
+scene.add_mesh(track2);
+scene.add_mesh(player1.mesh);
+scene.add_mesh(player2.mesh);
+scene.add_mesh(player3.mesh);
+scene.add_mesh(player4.mesh);
+scene.add_mesh(player5.mesh);
+scene.add_mesh(player6.mesh);
 
 var manual = true;
 window.onkeypress = function(e)
@@ -730,7 +747,10 @@ window.setInterval(function() {
     player4.move();
     player5.move();
     player6.move();
-    scene.render(cv, cx);
+
+    cx.fillStyle = "#444";
+    cx.fillRect(0, 0, cv.width, cv.height);
+    scene.render(cv);
 
     cx.fillStyle = "#fff";
     cx.font = "32px verdana";
