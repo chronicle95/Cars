@@ -176,6 +176,7 @@ var Mesh = function(color)
         {
             ctx.beginPath();
             ctx.strokeStyle = this.color;
+            ctx.font = "10px courier";
             ctx.moveTo(this.points[0][0], this.points[0][1]);
 
             for (var i = 1; i < this.points.length; i++)
@@ -184,11 +185,6 @@ var Mesh = function(color)
             }
 
             ctx.stroke();
-        }
-
-        for (var i in this.meshes)
-        {
-            this.meshes[i].render(canvas);
         }
     }
 }
@@ -257,21 +253,12 @@ var Group = function()
     }
 }
 
-var Ray = function(x, y, a, len)
+var Ray = function(x, y, theta, len)
 {
     this.x = x;
     this.y = y;
-    this.a = a;
-    this.l = len;
-    this.container = false;
-    this.solid = false;
-    this.scene = null;
-    this.distance = undefined;
-
-    this.is_solid = function()
-    {
-        return this.solid;
-    }
+    this.theta = theta;
+    this.max_len = len;
 
     this.translate = function(x, y)
     {
@@ -279,83 +266,65 @@ var Ray = function(x, y, a, len)
         this.y += y;
     }
 
-    this.rotate = function(t)
+    this.rotate = function(theta)
     {
-        var temp = rot(this.x, this.y, t);
+        var temp = rot(this.x, this.y, theta);
         this.x = temp[0];
         this.y = temp[1];
-        this.a += t;
+        this.theta += theta;
     }
     
-    this.set_scene = function(scene)
+    this.nearest_encounter = function(group)
     {
-        this.scene = scene;
-    }
-    
-    this.nearest_encounter = function()
-    {
-        var nx = this.x + (this.l * Math.cos(this.a));
-        var ny = this.y + (this.l * Math.sin(this.a));
+        var nx = this.x + (this.max_len * Math.cos(this.theta));
+        var ny = this.y + (this.max_len * Math.sin(this.theta));
         var nl = null;
         var np = null;
 
         /* Find nearest intersection */
-        for (var i in this.scene.elements)
+        var tmp = Mesh();
+        var gtmp = Group();
+        tmp.add_point([this.x, this.y]);
+        tmp.add_point([nx, ny]);
+        gtmp.add_mesh(gtmp);
+        var isp = gtmp.collide(group);
+
+        for (var i in isp)
         {
-            var elem = this.scene.elements[i];
-            if (!elem.solid)
-            {
-                continue;
-            }
+            var tl = Math.sqrt(Math.pow((isp[i][0] - this.x), 2)
+                             + Math.pow((isp[i][1] - this.y), 2));
 
-            var p = isect(elem.x1, elem.y1, elem.x2, elem.y2,
-                          this.x, this.y, nx, ny);
-            if (p == undefined)
+            if ((nl == null) || (tl < nl))
             {
-                continue;
-            }
-
-            if (nl == null)
-            {
-                var temp = Math.sqrt(Math.pow(p[0]-this.x, 2)
-                                + Math.pow(p[1]-this.y, 2));
-                if (temp < this.l)
-                {
-                    nl = temp;
-                    np = p;
-                }
-            }
-            else
-            {
-                var temp = Math.sqrt(Math.pow(p[0]-this.x, 2)
-                                    + Math.pow(p[1]-this.y, 2));
-                if (temp < nl)
-                {
-                    nl = temp;
-                    np = p;
-                }
+                nl = tl;
+                np = isp[i];
             }
         }
 
         if (np != null)
         {
-            nx = np[0];
-            ny = np[1];
+            return np;
         }
 
         return [nx, ny];
     }
 
-    this.get_distance = function()
+    this.get_distance = function(group)
     {
-        return this.distance;
+        var p = this.nearest_encounter(group);
+        
+        return Math.sqrt(Math.pow(p[0]-this.x, 2)
+                       + Math.pow(p[1]-this.y, 2));
     }
 
-    this.render = function(canv, ctx)
+    this.render = function(canvas)
     {
+        var ctx = canvas.getContext("2d");
+
         var p = this.nearest_encounter();
-        this.distance = Math.floor(Math.sqrt(Math.pow(p[0]-this.x, 2)
-                        + Math.pow(p[1]-this.y, 2)));
+        var d = Math.floor(Math.sqrt(Math.pow(p[0]-this.x, 2)
+                                   + Math.pow(p[1]-this.y, 2)));
+
         ctx.fillStyle = "#833";
         ctx.fillRect(this.x - 2, this.y - 2, 4, 4);
         ctx.strokeStyle = "#833";
@@ -364,8 +333,7 @@ var Ray = function(x, y, a, len)
         ctx.lineTo(p[0], p[1]);
         ctx.stroke();
         ctx.font = "10px arial";
-        ctx.fillText(this.distance,
-                        (p[0]-this.x)/2+this.x,
+        ctx.fillText(d, (p[0]-this.x)/2+this.x,
                         (p[1]-this.y)/2+this.y);
     }
 }
@@ -378,9 +346,20 @@ var Car = function(x, y, theta, col)
     this.theta = theta;
 
     this.sens_fl = new Ray(10, -20, -Math.PI*3/4, 150);
+    this.sens_fl.rotate(this.theta);
+    this.sens_fl.translate(this.x, this.y);
+
     this.sens_fr = new Ray(-10, -20, -Math.PI/4, 150);
+    this.sens_fr.rotate(this.theta);
+    this.sens_fr.translate(this.x, this.y);
+
     this.sens_sl = new Ray(-10, -5, -Math.PI, 150);
+    this.sens_sl.rotate(this.theta);
+    this.sens_sl.translate(this.x, this.y);
+
     this.sens_sr = new Ray(10, -5, 0, 150);
+    this.sens_sr.rotate(this.theta);
+    this.sens_sr.translate(this.x, this.y);
 
     this.mesh = new Mesh(col);
     this.mesh.add_point([-10, -20]);
