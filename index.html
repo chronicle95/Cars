@@ -282,12 +282,12 @@ var Ray = function(x, y, theta, len)
         var np = null;
 
         /* Find nearest intersection */
-        var tmp = Mesh();
-        var gtmp = Group();
+        var tmp = new Mesh();
+        var gtmp = new Group();
         tmp.add_point([this.x, this.y]);
         tmp.add_point([nx, ny]);
         gtmp.add_mesh(gtmp);
-        var isp = gtmp.collide(group);
+        var isp = gtmp.colliding(group);
 
         for (var i in isp)
         {
@@ -312,22 +312,22 @@ var Ray = function(x, y, theta, len)
     this.get_distance = function(group)
     {
         var p = this.nearest_encounter(group);
-        
+
         return Math.sqrt(Math.pow(p[0]-this.x, 2)
                        + Math.pow(p[1]-this.y, 2));
     }
 
-    this.render = function(canvas)
+    this.render = function(canvas, group)
     {
         var ctx = canvas.getContext("2d");
 
-        var p = this.nearest_encounter();
+        var p = this.nearest_encounter(group);
         var d = Math.floor(Math.sqrt(Math.pow(p[0]-this.x, 2)
                                    + Math.pow(p[1]-this.y, 2)));
 
-        ctx.fillStyle = "#833";
+        ctx.fillStyle = "#f00";
         ctx.fillRect(this.x - 2, this.y - 2, 4, 4);
-        ctx.strokeStyle = "#833";
+        ctx.strokeStyle = "#f00";
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
         ctx.lineTo(p[0], p[1]);
@@ -415,6 +415,15 @@ var Car = function(x, y, theta, col)
     {
         this.anchor.crotate(Math.PI/90);
     }
+    
+    this.render = function(canvas, group)
+    {
+        this.sens_fl.render(canvas, group);
+        this.sens_fr.render(canvas, group);
+        this.sens_sl.render(canvas, group);
+        this.sens_sr.render(canvas, group);
+        this.mesh.render(canvas);
+    }
 
     this.update = function()
     {
@@ -479,12 +488,6 @@ track1.add_point([190, 200]);
 var scene = new Group();
 scene.add_mesh(track1);
 scene.add_mesh(track2);
-scene.add_mesh(player1.mesh);
-scene.add_mesh(player2.mesh);
-scene.add_mesh(player3.mesh);
-scene.add_mesh(player4.mesh);
-scene.add_mesh(player5.mesh);
-scene.add_mesh(player6.mesh);
 
 var manual = true;
 window.onkeypress = function(e)
@@ -533,6 +536,12 @@ window.setInterval(function() {
     cx.fillStyle = "#444";
     cx.fillRect(0, 0, cv.width, cv.height);
     scene.render(cv);
+    player1.render(cv, scene);
+    //player2.render(cv, scene);
+    //player3.render(cv, scene);
+    //player4.render(cv, scene);
+    //player5.render(cv, scene);
+    //player6.render(cv, scene);
 
     cx.fillStyle = "#fff";
     cx.font = "32px verdana";
