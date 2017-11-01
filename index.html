@@ -257,64 +257,6 @@ var Group = function()
     }
 }
 
-/** Drawable and interactive objects **/
-var Line = function(x1, y1, x2, y2, col)
-{
-    this.x1 = x1;
-    this.y1 = y1;
-    this.x2 = x2;
-    this.y2 = y2;
-    this.col = col;
-    this.container = false;
-    this.solid = true;
-    this.scene = null;
-
-    this.translate = function(x, y)
-    {
-        this.x1 += x;
-        this.x2 += x;
-        this.y1 += y;
-        this.y2 += y;
-    }
-    
-    this.clone = function()
-    {
-        var temp = new Line(this.x1, this.y1,
-                            this.x2, this.y2, this.col);
-        temp.set_scene(this.scene);
-        return temp;
-    }
-
-    this.rotate = function(t)
-    {
-        var temp1 = rot(this.x1, this.y1, t);
-        var temp2 = rot(this.x2, this.y2, t);
-        this.x1 = temp1[0];
-        this.x2 = temp2[0];
-        this.y1 = temp1[1];
-        this.y2 = temp2[1]; 
-    }
-    
-    this.is_solid = function()
-    {
-        return this.solid;
-    }
-    
-    this.set_scene = function(scene)
-    {
-        this.scene = scene;
-    }
-
-    this.render = function(canv, ctx)
-    {
-        ctx.strokeStyle = (this.col == undefined) ? "#eee" : this.col;
-        ctx.beginPath();
-        ctx.moveTo(this.x1, this.y1);
-        ctx.lineTo(this.x2, this.y2);
-        ctx.stroke();
-    }
-}
-
 var Ray = function(x, y, a, len)
 {
     this.x = x;
