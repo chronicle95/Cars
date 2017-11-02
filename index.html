@@ -243,6 +243,11 @@ var Group = function()
     {
         var isp = [];
 
+        if (this == group)
+        {
+            return undefined;
+        }
+
         for (var i in this.meshes)
         {
             for (var j in group.meshes)
@@ -541,7 +546,7 @@ track1.add_point([90, 100]);
 
 var track2 = new Mesh("#fff");
 track2.add_point([190, 200]);
-track2.add_point([430, 200]);
+track2.add_point([430, 201]);
 track2.add_point([400, 380]);
 track2.add_point([200, 370]);
 track2.add_point([190, 200]);
