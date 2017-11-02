@@ -3,18 +3,30 @@
     <head>
         <title>Car Model</title>
         <meta charset="utf-8"/>
-<style>
-canvas {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-</style>
+    <style>
+    body {
+        font-family: monospace;
+    }
+    #mode {
+        display: block;
+        font-weight: bold;
+    }
+    </style>
     </head>
     <body>
-        <canvas width="600" height="600"></canvas>
+        <table>
+            <tr>
+                <td>
+                    <canvas width="600" height="600"></canvas>
+                </td>
+                <td valign="top">
+                    <div>
+                        Mode:
+                        <span id="mode">Manual</span>
+                    </div>
+                </td>
+            </tr>
+        </table>
         <script>
 /* Rotations */
 function rot(x, y, t)
@@ -446,14 +458,22 @@ var Car = function(x, y, theta, col)
         this.theta += theta;
     }
 
-    this.turn_left = function()
+    this.turn_left = function(group)
     {
-        this.rotate(-Math.PI/90);        
+        this.rotate(-Math.PI/90);
+        if (this.group.colliding(group))
+        {
+            this.rotate(Math.PI/90);
+        }
     }
 
-    this.turn_right = function()
+    this.turn_right = function(group)
     {
         this.rotate(Math.PI/90);
+        if (this.group.colliding(group))
+        {
+            this.rotate(-Math.PI/90);
+        }
     }
     
     this.render = function(canvas, group)
@@ -478,11 +498,11 @@ var Car = function(x, y, theta, col)
             this.go_backward();
             if (dist_sl > dist_sr)
             {
-                this.turn_left();
+                this.turn_left(group);
             }
             else
             {
-                this.turn_right();
+                this.turn_right(group);
             }
         }
         else
@@ -491,11 +511,11 @@ var Car = function(x, y, theta, col)
             this.go_forward();
             if (dist_fl > dist_fr)
             {
-                this.turn_left();
+                this.turn_left(group);
             }
             else
             {
-                this.turn_right();
+                this.turn_right(group);
             }
         }
     }
@@ -540,11 +560,11 @@ window.onkeypress = function(e)
             break;
         case 97:  //left (A)
         case 65:
-            player1.turn_left();
+            player1.turn_left(scene);
             break;
         case 100: //right (D)
         case 68:
-            player1.turn_right();
+            player1.turn_right(scene);
             break;
         case 115: //down (S)
         case 83:
@@ -578,15 +598,14 @@ window.setInterval(function() {
 
     scene.render(cv);
     player1.render(cv, scene);
-    //player2.render(cv, scene);
-    //player3.render(cv, scene);
-    //player4.render(cv, scene);
-    //player5.render(cv, scene);
-    //player6.render(cv, scene);
+    player2.render(cv, scene);
+    player3.render(cv, scene);
+    player4.render(cv, scene);
+    player5.render(cv, scene);
+    player6.render(cv, scene);
 
-    cx.fillStyle = "#fff";
-    cx.font = "32px verdana";
-    cx.fillText(manual?"Manual":"Automatic", 10, 50);
+    document.getElementById("mode").innerHTML =
+                                        manual?"Manual":"Automatic";
 }, 20);
         </script>
     </body>
