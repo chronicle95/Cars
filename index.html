@@ -6,6 +6,7 @@
     <style>
     body {
         font-family: monospace;
+        font-size: 16px;
     }
     #mode {
         display: block;
@@ -157,7 +158,7 @@ var Mesh = function(color)
     {
         var isp = [];
 
-        if ((!this.solid) || (!mesh.solid))
+        if ((!this.solid) || (!mesh.solid) || (mesh == this))
         {
             return undefined;
         }
@@ -365,10 +366,10 @@ var Car = function(x, y, theta, col)
     this.theta = theta;
     this.speed = 0;
 
-    this.sens_fl = new Ray(10, -20, -Math.PI*3/4, 150);
-    this.sens_fr = new Ray(-10, -20, -Math.PI/4, 150);
-    this.sens_sl = new Ray(-10, -5, -Math.PI, 150);
-    this.sens_sr = new Ray(10, -5, 0, 150);
+    this.sens_fl = new Ray(11, -20, -Math.PI*3/4, 150);
+    this.sens_fr = new Ray(-11, -20, -Math.PI/4, 150);
+    this.sens_sl = new Ray(-11, -5, -Math.PI, 150);
+    this.sens_sr = new Ray(11, -5, 0, 150);
     this.mesh = new Mesh(col);
     this.group = new Group();
 
@@ -548,6 +549,12 @@ track2.add_point([190, 200]);
 var scene = new Group();
 scene.add_mesh(track1);
 scene.add_mesh(track2);
+scene.add_mesh(player1.mesh);
+scene.add_mesh(player2.mesh);
+scene.add_mesh(player3.mesh);
+scene.add_mesh(player4.mesh);
+scene.add_mesh(player5.mesh);
+scene.add_mesh(player6.mesh);
 
 var manual = true;
 window.onkeypress = function(e)
