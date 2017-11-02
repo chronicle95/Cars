@@ -1,15 +1,17 @@
-var Car = function(x, y, theta, col)
+var Car = function(x, y, theta, col, name)
 {
     this.x = x;
     this.y = y;
     this.theta = theta;
     this.speed = 0;
+    this.name = name;
+    this.color = col;
 
     this.sens_fl = new Ray(11, -20, -Math.PI*3/4, 150);
     this.sens_fr = new Ray(-11, -20, -Math.PI/4, 150);
     this.sens_sl = new Ray(-11, -5, -Math.PI, 150);
     this.sens_sr = new Ray(11, -5, 0, 150);
-    this.mesh = new Mesh(col);
+    this.mesh = new Mesh(this.color);
     this.group = new Group();
 
     this.sens_fl.rotate(this.theta);
@@ -128,6 +130,11 @@ var Car = function(x, y, theta, col)
         this.sens_sl.render(canvas, group);
         this.sens_sr.render(canvas, group);
         this.group.render(canvas);
+
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = this.color;
+        ctx.font = "14px sans";
+        ctx.fillText(this.name, this.x, this.y);
     }
 
     this.update = function(group)

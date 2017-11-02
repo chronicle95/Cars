@@ -22,7 +22,7 @@
         <table>
             <tr>
                 <td>
-                    <canvas width="600" height="600"></canvas>
+                    <canvas width="600" height="550"></canvas>
                 </td>
                 <td valign="top">
                     <div class='editorc'>
@@ -30,12 +30,13 @@
                         <span class="editord" id="mode">Manual</span>
                     </div>
                     <div class='editorc'>
-                        Select:
+                        Car:
                         <span class="editord" id="index">0</span>
                     </div>
                 </td>
             </tr>
         </table>
+        <small>[Spacebar] - Manual/automatic, [WASD] - Move the car, [0]-[9] - Select a car</small>
         <script src="geometrics.js"></script>
         <script src="shapes.js"></script>
         <script src="models.js"></script>
@@ -44,12 +45,12 @@ var cv = document.getElementsByTagName("canvas")[0];
 var cx = cv.getContext("2d");
 
 var racers = [
-    new Car(450, 240, Math.PI/20, "#3ff"),
-    new Car(490, 240, Math.PI/20, "#f3f"),
-    new Car(440, 300, Math.PI/17, "#ff3"),
-    new Car(480, 300, Math.PI/19, "#33f"),
-    new Car(430, 360, Math.PI/20, "#f33"),
-    new Car(470, 360, Math.PI/18, "#aaa")
+    new Car(450, 240, Math.PI/20, "#3ff", "0"),
+    new Car(490, 240, Math.PI/20, "#f3f", "1"),
+    new Car(440, 300, Math.PI/17, "#ff3", "2"),
+    new Car(480, 300, Math.PI/19, "#33f", "3"),
+    new Car(430, 360, Math.PI/20, "#f33", "4"),
+    new Car(470, 360, Math.PI/18, "#aaa", "5")
 ];
 var racers_i = 0;
 
