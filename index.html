@@ -9,9 +9,12 @@
         font-size: 16px;
         background-color: #eee;
     }
-    #mode {
+    .editord {
         display: block;
         font-weight: bold;
+    }
+    .editorc {
+        margin-bottom: 10px;
     }
     </style>
     </head>
@@ -22,9 +25,13 @@
                     <canvas width="600" height="600"></canvas>
                 </td>
                 <td valign="top">
-                    <div>
+                    <div class='editorc'>
                         Mode:
-                        <span id="mode">Manual</span>
+                        <span class="editord" id="mode">Manual</span>
+                    </div>
+                    <div class='editorc'>
+                        Select:
+                        <span class="editord" id="index">0</span>
                     </div>
                 </td>
             </tr>
@@ -36,12 +43,15 @@
 var cv = document.getElementsByTagName("canvas")[0];
 var cx = cv.getContext("2d");
 
-var player1 = new Car(450, 240, Math.PI/20, "#3ff");
-var player2 = new Car(490, 240, Math.PI/20, "#f3f");
-var player3 = new Car(440, 300, Math.PI/17, "#ff3");
-var player4 = new Car(480, 300, Math.PI/19, "#33f");
-var player5 = new Car(430, 360, Math.PI/20, "#f33");
-var player6 = new Car(470, 360, Math.PI/18, "#aaa");
+var racers = [
+    new Car(450, 240, Math.PI/20, "#3ff"),
+    new Car(490, 240, Math.PI/20, "#f3f"),
+    new Car(440, 300, Math.PI/17, "#ff3"),
+    new Car(480, 300, Math.PI/19, "#33f"),
+    new Car(430, 360, Math.PI/20, "#f33"),
+    new Car(470, 360, Math.PI/18, "#aaa")
+];
+var racers_i = 0;
 
 var track1 = new Mesh("#fff");
 track1.add_point([90, 100]);
@@ -60,67 +70,82 @@ track2.add_point([190, 200]);
 var scene = new Group();
 scene.add_mesh(track1);
 scene.add_mesh(track2);
-scene.add_mesh(player1.mesh);
-scene.add_mesh(player2.mesh);
-scene.add_mesh(player3.mesh);
-scene.add_mesh(player4.mesh);
-scene.add_mesh(player5.mesh);
-scene.add_mesh(player6.mesh);
+for (var i in racers)
+{
+    scene.add_mesh(racers[i].mesh);
+}
 
 var manual = true;
 window.onkeypress = function(e)
 {
     switch (e.which)
     {
+        case 48:
+        case 49:
+        case 50:
+        case 51:
+        case 52:
+        case 53:
+        case 54:
+        case 55:
+        case 56:
+        case 57:
+            racers_i = (e.which - 48) % racers.length;
+            document.getElementById("index").innerHTML = racers_i;
+            break;
         case 119: //up (W)
         case 87:
-            player1.go_forward();
+            racers[racers_i].go_forward();
             break;
         case 97:  //left (A)
         case 65:
-            player1.turn_left(scene);
+            racers[racers_i].turn_left(scene);
             break;
         case 100: //right (D)
         case 68:
-            player1.turn_right(scene);
+            racers[racers_i].turn_right(scene);
             break;
         case 115: //down (S)
         case 83:
-            player1.go_backward();
+            racers[racers_i].go_backward();
             break;
         case 32:
-            manual = false;
+            manual = !manual;
+            if (manual)
+            {
+                for (var i in racers)
+                {
+                    racers[i].go_stop();
+                }
+            }
             window.setInterval(function() {
-                player1.update(scene);
-                player2.update(scene);
-                player3.update(scene);
-                player4.update(scene);
-                player5.update(scene);
-                player6.update(scene);
+                if (!manual)
+                {
+                    for (var i in racers)
+                    {
+                        racers[i].update(scene);
+                    }
+                }
             }, 40);
             break;
+        default:
+            return e;
     }
+    return 0;
 }
 
 /* Render loop */
 window.setInterval(function() {
-    player1.move(scene);
-    player2.move(scene);
-    player3.move(scene);
-    player4.move(scene);
-    player5.move(scene);
-    player6.move(scene);
 
     cx.fillStyle = "#444";
     cx.fillRect(0, 0, cv.width, cv.height);
 
     scene.render(cv);
-    player1.render(cv, scene);
-    player2.render(cv, scene);
-    player3.render(cv, scene);
-    player4.render(cv, scene);
-    player5.render(cv, scene);
-    player6.render(cv, scene);
+    for (var i in racers)
+    {
+        racers[i].move(scene);
+        racers[i].render(cv, scene);
+    }
 
     document.getElementById("mode").innerHTML =
                                         manual?"Manual":"Automatic";

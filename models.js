@@ -74,7 +74,12 @@ var Car = function(x, y, theta, col)
             this.speed = 0;
         }
     }
-    
+
+    this.go_stop = function()
+    {
+        this.speed = 0;
+    }
+
     this.rotate = function(theta)
     {
         this.group.translate(-this.x, -this.y);
