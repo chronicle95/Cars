@@ -3,42 +3,7 @@
     <head>
         <title>Car Model</title>
         <meta charset="utf-8"/>
-    <style>
-    body {
-        font-family: monospace;
-        font-size: 16px;
-        background-color: #eee;
-    }
-    .editord {
-        display: block;
-        font-weight: bold;
-    }
-    .editorc {
-        margin-bottom: 10px;
-    }
-    #editort {
-        margin-left: 40px;
-        margin-bottom: 0px;
-    }
-    #editorw {
-        position: absolute;
-        top: 0;
-        left: 0;
-        background-color: rgba(128, 128, 150, 0.9);
-        width: 100%;
-        height: 100%;
-    }
-    textarea {
-        border: 1px solid #003;
-        color: #ff0;
-        background-color: #005;
-        padding: 10px;
-        border-radius: 5px;
-    }
-    canvas {
-        border-radius: 5px;
-    }
-    </style>
+        <link rel="stylesheet" href="style.css"/>
     </head>
     <body>
         <table>
@@ -91,6 +56,15 @@ var racers_i = 0;
 
 
 var editing = false;
+function editor_open()
+{
+    editing = true;
+    document.getElementById("editorw").style.display = "block";
+    document.getElementById("code").value =
+                    racers[racers_i].update.toString();
+    document.getElementById("editort").innerHTML = 
+                    "Car #" + racers_i + " algorithm";
+}
 function editor_close()
 {
     editing = false;
@@ -169,12 +143,7 @@ window.onkeypress = function(e)
             break;
         case 101: // edit (E)
         case 69:
-            editing = true;
-            document.getElementById("editorw").style.display = "block";
-            document.getElementById("code").value =
-                            racers[racers_i].update.toString();
-            document.getElementById("editort").innerHTML = 
-                            "Car #" + racers_i + " algorithm";
+            editor_open();
             break;
         case 32:
             manual = !manual;
