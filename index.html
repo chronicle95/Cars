@@ -16,6 +16,28 @@
     .editorc {
         margin-bottom: 10px;
     }
+    #editort {
+        margin-left: 40px;
+        margin-bottom: 0px;
+    }
+    #editorw {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: rgba(128, 128, 150, 0.9);
+        width: 100%;
+        height: 100%;
+    }
+    textarea {
+        border: 1px solid #003;
+        color: #ff0;
+        background-color: #005;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    canvas {
+        border-radius: 5px;
+    }
     </style>
     </head>
     <body>
@@ -36,7 +58,20 @@
                 </td>
             </tr>
         </table>
-        <small>[Spacebar] - Manual/automatic, [WASD] - Move the car, [0]-[9] - Select a car</small>
+        <small>[Spacebar] - Manual/automatic, [WASD] - Move the car, [0]-[9] - Select a car<br/>
+        [E] - Edit algorithm</small>
+
+        <div style="display:none;" id="editorw">
+            <h1 id="editort">Config</h1>
+            <textarea id="code" cols="80" rows="25"
+                      style="margin: 40px;"></textarea>
+            <br/>
+            <button style="margin-left: 40px;"
+                    onclick="editor_close()">Cancel</button>
+            <button style="margin-left: 40px;"
+                    onclick="editor_save()">Save</button>
+        </div>
+
         <script src="geometrics.js"></script>
         <script src="shapes.js"></script>
         <script src="models.js"></script>
@@ -53,6 +88,20 @@ var racers = [
     new Car(470, 360, Math.PI/18, "#aaa", "5")
 ];
 var racers_i = 0;
+
+
+var editing = false;
+function editor_close()
+{
+    editing = false;
+    document.getElementById("editorw").style.display = "none";
+}
+function editor_save()
+{
+    racers[racers_i].update = eval("(" + document.getElementById("code").value + ")");
+    editor_close();
+}
+
 
 var track1 = new Mesh("#fff");
 track1.add_point([90, 100]);
@@ -79,6 +128,14 @@ for (var i in racers)
 var manual = true;
 window.onkeypress = function(e)
 {
+    if (editing)
+    {
+        if (e.keyCode == 27)
+        {
+            editor_close();
+        }
+        return e;
+    }
     switch (e.which)
     {
         case 48:
@@ -109,6 +166,15 @@ window.onkeypress = function(e)
         case 115: //down (S)
         case 83:
             racers[racers_i].go_backward();
+            break;
+        case 101: // edit (E)
+        case 69:
+            editing = true;
+            document.getElementById("editorw").style.display = "block";
+            document.getElementById("code").value =
+                            racers[racers_i].update.toString();
+            document.getElementById("editort").innerHTML = 
+                            "Car #" + racers_i + " algorithm";
             break;
         case 32:
             manual = !manual;
