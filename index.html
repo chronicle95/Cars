@@ -43,18 +43,11 @@
 var cv = document.getElementsByTagName("canvas")[0];
 var cx = cv.getContext("2d");
 
-var racers = [
-    new Car(450, 240, Math.PI/20, "#3ff", "0"),
-    new Car(490, 240, Math.PI/20, "#f3f", "1"),
-    new Car(440, 300, Math.PI/17, "#ff3", "2"),
-    new Car(480, 300, Math.PI/19, "#33f", "3"),
-    new Car(430, 360, Math.PI/20, "#f33", "4"),
-    new Car(470, 360, Math.PI/18, "#aaa", "5")
-];
+var editing = false;
+var manual = true;
 var racers_i = 0;
 
 
-var editing = false;
 function editor_open()
 {
     editing = true;
@@ -86,6 +79,15 @@ function editor_tab()
 }
 
 
+var racers = [
+    new Car(450, 240, Math.PI/20, "#3ff", "0"),
+    new Car(490, 240, Math.PI/20, "#f3f", "1"),
+    new Car(440, 300, Math.PI/17, "#ff3", "2"),
+    new Car(480, 300, Math.PI/19, "#33f", "3"),
+    new Car(430, 360, Math.PI/20, "#f33", "4"),
+    new Car(470, 360, Math.PI/18, "#aaa", "5")
+];
+
 var track1 = new Mesh("#fff");
 track1.add_point([90, 100]);
 track1.add_point([550, 90]);
@@ -108,7 +110,6 @@ for (var i in racers)
     scene.add_mesh(racers[i].mesh);
 }
 
-var manual = true;
 window.onkeypress = function(e)
 {
     if (editing)
@@ -168,21 +169,23 @@ window.onkeypress = function(e)
                     racers[i].go_stop();
                 }
             }
-            window.setInterval(function() {
-                if (!manual)
-                {
-                    for (var i in racers)
-                    {
-                        racers[i].update(scene);
-                    }
-                }
-            }, 40);
             break;
         default:
             return e;
     }
     return 0;
 }
+
+/* Update loop */
+window.setInterval(function() {
+    if (!manual)
+    {
+        for (var i in racers)
+        {
+            racers[i].update(scene);
+        }
+    }
+}, 40);
 
 /* Render loop */
 window.setInterval(function() {
