@@ -139,6 +139,9 @@ var Car = function(x, y, theta, col, name)
 
     this.update = function(group)
     {
+        /* This function is called at a set frequency.
+           It should not contain any delays */
+
         var dist_fl = this.sens_fl.get_distance(group);
         var dist_fr = this.sens_fr.get_distance(group);
         var dist_sl = this.sens_sl.get_distance(group);
