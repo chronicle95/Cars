@@ -74,6 +74,16 @@ function editor_save()
     racers[racers_i].update = eval("(" + document.getElementById("code").value + ")");
     editor_close();
 }
+function editor_tab()
+{
+    var TAB = '    ';
+    var ta = document.getElementById("code");
+    var old = ta.selectionStart;
+    ta.value = ta.value.substring(0, ta.selectionStart) + TAB + 
+               ta.value.substring(ta.selectionEnd, ta.value.length);
+    ta.selectionStart = old + 4;
+    ta.selectionEnd = ta.selectionStart;
+}
 
 
 var track1 = new Mesh("#fff");
@@ -106,6 +116,11 @@ window.onkeypress = function(e)
         if (e.keyCode == 27)
         {
             editor_close();
+        }
+        if (e.keyCode == 9)
+        {
+            editor_tab();
+            e.preventDefault();
         }
         return e;
     }
@@ -183,7 +198,7 @@ window.setInterval(function() {
     }
 
     document.getElementById("mode").innerHTML =
-                                        manual?"Manual":"Automatic";
+                                        manual?"Manual":"Auto";
 }, 20);
         </script>
     </body>
